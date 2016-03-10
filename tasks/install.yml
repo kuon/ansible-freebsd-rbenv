@@ -1,0 +1,54 @@
+---
+# tasks file for freebsd-rbenv
+- name: Installing packages
+  pkgng: name={{ item }}
+  with_items:
+  - git
+  - rbenv
+  - ruby-build
+
+- name: Installing jruby packages
+  pkgng: name={{ item }}
+  with_items:
+  - openjdk8
+  when: rbenv_version | match("jruby")
+
+- name: Make tmp dir
+  file: dest=/tmp/rbenv state=directory
+
+- name: Download ruby definition file
+  get_url: dest=/tmp/rbenv/{{ rbenv_version }} url=https://raw.githubusercontent.com/rbenv/ruby-build/master/share/ruby-build/{{ rbenv_version }}
+
+# On FreeBSD, clang is used instead of gcc, which means g++ is not present
+# and jruby is hardcoded to use it
+- name: Create temporary bin dir
+  file: dest=/tmp/rbenv/bin state=directory
+  when: rbenv_version | match("jruby")
+
+- name: Link g++
+  file: dest=/tmp/rbenv/bin/g++ state=link src=/usr/bin/c++
+  when: rbenv_version | match("jruby")
+
+- name: Link gcc
+  file: dest=/tmp/rbenv/bin/gcc state=link src=/usr/bin/cc
+  when: rbenv_version | match("jruby")
+
+- name: Install ruby
+  command: rbenv install /tmp/rbenv/{{ rbenv_version }}
+  environment: '{{ rbenv_env }}'
+  args:
+    creates: /srv/rbenv/versions/{{ rbenv_version }}
+
+- name: Delete tmp dir
+  file: dest=/tmp/rbenv state=absent
+
+- name: Install base gems
+  command: rbenv exec gem install {{ item }}
+  with_items:
+  - bundler
+  - rake
+  environment: '{{ rbenv_env }}'
+
+- name: Rehash rbenv
+  command: rbenv rehash
+  environment: '{{ rbenv_env }}'
