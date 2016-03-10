@@ -2,6 +2,7 @@
 - name: Check if ruby is installed
   command: ls /srv/rbenv/versions/{{ rbenv_version }}
   register: ruby_installed
+  ignore_errors: true
 
 - include: install.yml
   when: ruby_installed | failed
