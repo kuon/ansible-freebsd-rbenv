@@ -39,6 +39,12 @@
   args:
     creates: /srv/rbenv/versions/{{ rbenv_version }}
 
+- name: Create rbenv bin dir
+  file: dest={{ rbenv_root }}/bin state=directory
+
+- name: Link rbenv binary
+  file: dest={{ rbenv_root }}/bin/rbenv state=link src=/usr/local/bin/rbenv
+
 - name: Delete tmp dir
   file: dest=/tmp/rbenv state=absent
 
